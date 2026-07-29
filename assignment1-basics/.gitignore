@@ -1,3 +1,9 @@
+# code for test
+cs336_basics/tmp.py
+
+# symbolic link of data
+data
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
