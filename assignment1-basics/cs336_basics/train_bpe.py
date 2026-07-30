@@ -66,33 +66,53 @@ def train(
                     tup: tuple[bytes, ...] = tuple(bytes([b]) for b in b_word)
                     freq[tup] = freq.get(tup, 0) + 1
 
+    pair_to_tupset: dict[tuple[bytes, ...], set[tuple[bytes, ...]]] = {}
+    freq_bp = {}
+    for b_tup, cnt in freq.items():
+        for i in range(0, len(b_tup) - 1):
+            byte_pair = b_tup[i : i + 2]
+            freq_bp[byte_pair] = freq_bp.get(byte_pair, 0) + cnt
+            pair_to_tupset.setdefault(byte_pair, set()).add(b_tup)
+
     # merging:
     while True:
         if vocab_id >= vocab_size:
             break
-        freq_bp = {}
-        for b_tup, cnt in freq.items():
-            for i in range(0, len(b_tup) - 1):
-                byte_pair = b_tup[i : i + 2]
-                freq_bp[byte_pair] = freq_bp.get(byte_pair, 0) + cnt
         if not freq_bp:  # no more word to merge
             break
         best_pair = max(freq_bp, key=lambda k: (freq_bp[k], k))
         merges.append(best_pair)
         vocab[vocab_id] = b"".join(best_pair)
         vocab_id += 1
-        new_freq = {}
-        for b_tup, cnt in freq.items():
+
+        tuplist = pair_to_tupset[best_pair]
+        upd_freq_event = []
+        for b_tup in tuplist:
             new_b_list = []
             i = 0
-            while i < len(b_tup):
-                if i + 1 < len(b_tup) and b_tup[i : i + 2] == best_pair:
+            b_tup_size = len(b_tup)
+            while i < b_tup_size:
+                if i + 1 < b_tup_size and b_tup[i : i + 2] == best_pair:
                     new_b_list.append(b"".join(b_tup[i : i + 2]))
                     i += 2
                 else:
                     new_b_list.append(b_tup[i])
                     i += 1
             new_b_tuple = tuple(new_b_list)
-            new_freq[tuple(new_b_tuple)] = new_freq.get(tuple(new_b_tuple), 0) + cnt
-        freq = new_freq
+            upd_freq_event.append((b_tup, new_b_tuple, freq.get(b_tup, 0)))
+
+        for pre_tup, nxt_tup, val in upd_freq_event:
+            freq.pop(pre_tup, None)
+            freq[nxt_tup] = freq.get(nxt_tup, 0) + val
+            for i in range(0, len(pre_tup) - 1):
+                byte_pair = pre_tup[i : i + 2]
+                freq_bp[byte_pair] = freq_bp.get(byte_pair, 0) - val
+                if freq_bp[byte_pair] == 0:
+                    freq_bp.pop(byte_pair, None)
+                pair_to_tupset.setdefault(byte_pair, set()).discard(pre_tup)
+            for i in range(0, len(nxt_tup) - 1):
+                byte_pair = nxt_tup[i : i + 2]
+                freq_bp[byte_pair] = freq_bp.get(byte_pair, 0) + val
+                pair_to_tupset.setdefault(byte_pair, set()).add(nxt_tup)
+
     return (vocab, merges)
