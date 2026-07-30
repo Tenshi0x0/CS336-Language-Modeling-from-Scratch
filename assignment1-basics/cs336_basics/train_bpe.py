@@ -55,7 +55,10 @@ def train(
             f.seek(start)
             chunk = f.read(end - start).decode("utf-8", errors="ignore")
 
-            strs = chunk.split(pattern)
+            if not pattern:
+                strs = list(chunk)
+            else:
+                strs = re.split(pattern, chunk)
             for cur_string in strs:
                 words = re.findall(PAT, cur_string)
                 for word in words:
@@ -87,8 +90,9 @@ def train(
                     new_b_list.append(b"".join(b_tup[i : i + 2]))
                     i += 2
                 else:
-                    new_b_list.append(b_tup[i : i + 1])
+                    new_b_list.append(b_tup[i])
                     i += 1
-            new_freq[tuple(new_b_list)] = new_freq.get(tuple(new_b_list), 0) + cnt
-
+            new_b_tuple = tuple(new_b_list)
+            new_freq[tuple(new_b_tuple)] = new_freq.get(tuple(new_b_tuple), 0) + cnt
+        freq = new_freq
     return (vocab, merges)
