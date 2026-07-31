@@ -70,7 +70,7 @@ def train(
         chunks = []
         for start, end in zip(boundaries[:-1], boundaries[1:]):
             f.seek(start)
-            chunk = f.read(end - start).decode("utf-8", errors="ignore")
+            chunk = f.read(end - start)
             chunks.append(chunk)
 
         with ProcessPoolExecutor(max_workers=num_cpu) as ex:

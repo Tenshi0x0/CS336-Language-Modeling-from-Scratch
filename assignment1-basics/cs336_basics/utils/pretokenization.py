@@ -52,7 +52,8 @@ def find_chunk_boundaries(
     return sorted(set(chunk_boundaries))
 
 
-def sub_upd_freq(chunk: str, special_pattern: str) -> dict[tuple[bytes, ...], int]:
+def sub_upd_freq(bchunk: bytes, special_pattern: str) -> dict[tuple[bytes, ...], int]:
+    chunk = bchunk.decode("utf-8", errors="ignore")
     if not special_pattern:
         strs = list(chunk)
     else:
