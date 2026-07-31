@@ -1,6 +1,20 @@
 import os
 from cs336_basics.utils import pretokenization
 import regex as re
+import heapq
+import typing
+from dataclasses import dataclass
+
+
+@dataclass(slots=True, order=False)
+class HeapNode:
+    val: int
+    name: tuple[bytes, ...]
+
+    def __lt__(self, o: typing.Self) -> bool:
+        if self.val != o.val:
+            return self.val > o.val
+        return self.name > o.name
 
 
 def train(
@@ -68,10 +82,13 @@ def train(
 
     pair_to_tupset: dict[tuple[bytes, ...], set[tuple[bytes, ...]]] = {}
     freq_bp = {}
+    bp_heap = []
     for b_tup, cnt in freq.items():
         for i in range(0, len(b_tup) - 1):
             byte_pair = b_tup[i : i + 2]
-            freq_bp[byte_pair] = freq_bp.get(byte_pair, 0) + cnt
+            freq_val = freq_bp.get(byte_pair, 0) + cnt
+            freq_bp[byte_pair] = freq_val
+            heapq.heappush(bp_heap, HeapNode(freq_val, byte_pair))
             pair_to_tupset.setdefault(byte_pair, set()).add(b_tup)
 
     # merging:
@@ -80,7 +97,14 @@ def train(
             break
         if not freq_bp:  # no more word to merge
             break
-        best_pair = max(freq_bp, key=lambda k: (freq_bp[k], k))
+        # best_pair = max(freq_bp, key=lambda k: (freq_bp[k], k))
+        best_pair = None
+        while bp_heap:
+            node = heapq.heappop(bp_heap)
+            if freq_bp.get(node.name, 0) == node.val:
+                best_pair = node.name
+                break
+        assert best_pair, "cannot find valid pair"
         merges.append(best_pair)
         vocab[vocab_id] = b"".join(best_pair)
         vocab_id += 1
@@ -106,13 +130,17 @@ def train(
             freq[nxt_tup] = freq.get(nxt_tup, 0) + val
             for i in range(0, len(pre_tup) - 1):
                 byte_pair = pre_tup[i : i + 2]
-                freq_bp[byte_pair] = freq_bp.get(byte_pair, 0) - val
+                freq_val = freq_bp.get(byte_pair, 0) - val
+                freq_bp[byte_pair] = freq_val
+                heapq.heappush(bp_heap, HeapNode(freq_val, byte_pair))
                 if freq_bp[byte_pair] == 0:
                     freq_bp.pop(byte_pair, None)
                 pair_to_tupset.setdefault(byte_pair, set()).discard(pre_tup)
             for i in range(0, len(nxt_tup) - 1):
                 byte_pair = nxt_tup[i : i + 2]
-                freq_bp[byte_pair] = freq_bp.get(byte_pair, 0) + val
+                freq_val = freq_bp.get(byte_pair, 0) + val
+                freq_bp[byte_pair] = freq_val
+                heapq.heappush(bp_heap, HeapNode(freq_val, byte_pair))
                 pair_to_tupset.setdefault(byte_pair, set()).add(nxt_tup)
 
     return (vocab, merges)
