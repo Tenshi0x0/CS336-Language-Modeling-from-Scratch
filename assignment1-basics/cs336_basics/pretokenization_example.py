@@ -49,9 +49,6 @@ def find_chunk_boundaries(
     return sorted(set(chunk_boundaries))
 
 
-# def split_chunk()
-
-
 ## Usage
 # with open(..., "rb") as f:
 #     num_processes = 4

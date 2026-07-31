@@ -4,6 +4,8 @@ import regex as re
 import heapq
 import typing
 from dataclasses import dataclass
+from concurrent.futures import ProcessPoolExecutor
+from functools import partial
 
 
 @dataclass(slots=True, order=False)
@@ -58,27 +60,23 @@ def train(
         vocab_id += 1
 
     # is eot always in special_tokens?
-    pattern = "|".join(map(re.escape, special_tokens))
-    PAT = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
+    special_pattern = "|".join(map(re.escape, special_tokens))
 
     with open(input_path, "rb") as f:
-        num_processes = 4
+        num_cpu = len(os.sched_getaffinity(0))
+        num_processes = num_cpu * 3
         boundaries = pretokenization.find_chunk_boundaries(f, num_processes, b"<|endoftext|>")
 
+        chunks = []
         for start, end in zip(boundaries[:-1], boundaries[1:]):
             f.seek(start)
             chunk = f.read(end - start).decode("utf-8", errors="ignore")
+            chunks.append(chunk)
 
-            if not pattern:
-                strs = list(chunk)
-            else:
-                strs = re.split(pattern, chunk)
-            for cur_string in strs:
-                words = re.findall(PAT, cur_string)
-                for word in words:
-                    b_word = word.encode("utf-8")
-                    tup: tuple[bytes, ...] = tuple(bytes([b]) for b in b_word)
-                    freq[tup] = freq.get(tup, 0) + 1
+        with ProcessPoolExecutor(max_workers=num_cpu) as ex:
+            for sub_freq in ex.map(partial(pretokenization.sub_upd_freq, special_pattern=special_pattern), chunks):
+                for x, y in sub_freq.items():
+                    freq[x] = freq.get(x, 0) + y
 
     pair_to_tupset: dict[tuple[bytes, ...], set[tuple[bytes, ...]]] = {}
     freq_bp = {}
@@ -136,6 +134,7 @@ def train(
                 if freq_bp[byte_pair] == 0:
                     freq_bp.pop(byte_pair, None)
                 pair_to_tupset.setdefault(byte_pair, set()).discard(pre_tup)
+
             for i in range(0, len(nxt_tup) - 1):
                 byte_pair = nxt_tup[i : i + 2]
                 freq_val = freq_bp.get(byte_pair, 0) + val

@@ -1,5 +1,8 @@
 import os
 from typing import BinaryIO
+import regex as re
+
+PAT = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
 
 
 def find_chunk_boundaries(
@@ -47,3 +50,18 @@ def find_chunk_boundaries(
 
     # Make sure all boundaries are unique, but might be fewer than desired_num_chunks
     return sorted(set(chunk_boundaries))
+
+
+def sub_upd_freq(chunk: str, special_pattern: str) -> dict[tuple[bytes, ...], int]:
+    if not special_pattern:
+        strs = list(chunk)
+    else:
+        strs = re.split(special_pattern, chunk)
+    freq = {}
+    for cur_string in strs:
+        words = re.findall(PAT, cur_string)
+        for word in words:
+            b_word = word.encode("utf-8")
+            tup: tuple[bytes, ...] = tuple(bytes([b]) for b in b_word)
+            freq[tup] = freq.get(tup, 0) + 1
+    return freq
