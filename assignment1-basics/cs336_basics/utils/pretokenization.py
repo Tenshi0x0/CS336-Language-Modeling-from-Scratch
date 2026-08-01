@@ -55,7 +55,7 @@ def find_chunk_boundaries(
 def sub_upd_freq(bchunk: bytes, special_pattern: str) -> dict[tuple[bytes, ...], int]:
     chunk = bchunk.decode("utf-8", errors="ignore")
     if not special_pattern:
-        strs = list(chunk)
+        strs = [chunk]
     else:
         strs = re.split(special_pattern, chunk)
     freq = {}
@@ -66,3 +66,16 @@ def sub_upd_freq(bchunk: bytes, special_pattern: str) -> dict[tuple[bytes, ...],
             tup: tuple[bytes, ...] = tuple(bytes([b]) for b in b_word)
             freq[tup] = freq.get(tup, 0) + 1
     return freq
+
+
+def pretokenization(chunk: str, special_pattern: str) -> list[str]:
+    if not special_pattern:
+        strs = [chunk]
+    else:
+        # strs = re.split(special_pattern, chunk)
+        strs = re.split(f"({special_pattern})", chunk)
+    word_list = []
+    for cur_string in strs:
+        words = re.findall(PAT, cur_string)
+        word_list.extend(words)
+    return word_list
