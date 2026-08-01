@@ -15,6 +15,7 @@ class Tokenizer:
         self.vocab: dict[int, bytes] = vocab
         self.merges: list[tuple[bytes, bytes]] = merges
         self.special_tokens: list[str] = special_tokens if special_tokens is not None else []
+        self.special_tokens.sort(key=lambda x: -len(x))
         self.merge_ranks: dict[tuple[bytes, bytes], int] = {}
         self.word_ids: dict[bytes, int] = {}
         self.LOWESTRANK: int = len(merges)
@@ -100,16 +101,18 @@ class Tokenizer:
         return encode_list
 
     def encode(self, text: str) -> list[int]:
-        word_list = pretokenization.pretokenization(
-            text, special_pattern="|".join(map(re.escape, self.special_tokens))
-        )
+        word_list = pretokenization.pretokenization(text, self.special_tokens)
+
         res: list[int] = []
         for word in word_list:
-            blist = []
-            bword = word.encode("utf-8")
-            for byte in bword:
-                blist.append(bytes([byte]))
-            res.extend(self.encode_bytes(blist))
+            if word in self.special_tokens:
+                res.append(self.word_ids[word.encode("utf-8")])
+            else:
+                blist = []
+                bword = word.encode("utf-8")
+                for byte in bword:
+                    blist.append(bytes([byte]))
+                res.extend(self.encode_bytes(blist))
         return res
 
     def encode_iterable(

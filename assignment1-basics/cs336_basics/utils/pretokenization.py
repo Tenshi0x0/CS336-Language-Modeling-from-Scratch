@@ -68,7 +68,8 @@ def sub_upd_freq(bchunk: bytes, special_pattern: str) -> dict[tuple[bytes, ...],
     return freq
 
 
-def pretokenization(chunk: str, special_pattern: str) -> list[str]:
+def pretokenization(chunk: str, special_tokens: str) -> list[str]:
+    special_pattern = "|".join(map(re.escape, special_tokens))
     if not special_pattern:
         strs = [chunk]
     else:
@@ -76,6 +77,9 @@ def pretokenization(chunk: str, special_pattern: str) -> list[str]:
         strs = re.split(f"({special_pattern})", chunk)
     word_list = []
     for cur_string in strs:
-        words = re.findall(PAT, cur_string)
-        word_list.extend(words)
+        if cur_string in special_tokens:
+            word_list.append(cur_string)
+        else:
+            words = re.findall(PAT, cur_string)
+            word_list.extend(words)
     return word_list
