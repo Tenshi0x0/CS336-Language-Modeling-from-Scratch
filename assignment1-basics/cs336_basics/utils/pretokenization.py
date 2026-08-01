@@ -68,7 +68,7 @@ def sub_upd_freq(bchunk: bytes, special_pattern: str) -> dict[tuple[bytes, ...],
     return freq
 
 
-def pretokenization(chunk: str, special_tokens: str) -> list[str]:
+def pretokenization(chunk: str, special_tokens: list[str]) -> list[str]:
     special_pattern = "|".join(map(re.escape, special_tokens))
     if not special_pattern:
         strs = [chunk]

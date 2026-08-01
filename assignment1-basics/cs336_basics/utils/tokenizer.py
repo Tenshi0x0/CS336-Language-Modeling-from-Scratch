@@ -2,7 +2,6 @@ from collections.abc import Iterable, Iterator
 from typing import Self
 import heapq
 from cs336_basics.utils import pretokenization
-import regex as re
 
 
 class Tokenizer:
@@ -49,7 +48,7 @@ class Tokenizer:
         valid_group: dict[tuple[int, int], int] = {}  # valid group just guarantee adjacency
         candidate_heap = []  # candidate heap for merging
         for i in range(blist_size - 1):
-            tup = tuple(blist[i : i + 2])
+            tup: tuple[bytes, bytes] = (blist[i], blist[i + 1])
             valid_group[(i, i + 1)] = self.merge_ranks.get(tup, self.LOWESTRANK)
             if tup in self.merge_ranks:
                 heapq.heappush(candidate_heap, (self.merge_ranks[tup], (i, i + 1)))
