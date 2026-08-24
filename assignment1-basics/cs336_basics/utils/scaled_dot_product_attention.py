@@ -26,8 +26,8 @@ def scaled_dot_product_attention(
 
     # n: queries; m: keys
     d_k = Q.shape[-1]
-    QK = einsum(Q, K, "... n d_k, ... m d_k -> ... n m") / (d_k ** 0.5)
+    QK = einsum(Q, K, "... n d_k, ... m d_k -> ... n m") / (d_k**0.5)
     if mask is not None:
-        QK = torch.where(mask, QK, float('-inf'))
+        QK = torch.where(mask, QK, float("-inf"))
     QK = softmax(QK, dim=-1)
     return einsum(QK, V, "... n m, ... m d_v -> ... n d_v")

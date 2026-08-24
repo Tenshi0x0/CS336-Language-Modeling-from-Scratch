@@ -27,9 +27,10 @@ class RoPE(nn.Module):
         self.register_buffer("sin", ang.sin(), persistent=False)
         self.register_buffer("cos", ang.cos(), persistent=False)
 
-    def forward(self, x: torch.Tensor, token_positions: torch.Tensor) -> torch.Tensor:
-        sin = self.sin[token_positions]
-        cos = self.cos[token_positions]
+    def forward(self, x: torch.Tensor, token_positions: torch.Tensor | None = None) -> torch.Tensor:
+        idx = slice(x.shape[-2]) if token_positions is None else token_positions
+        sin = self.sin[idx]
+        cos = self.cos[idx]
 
         X = x[..., 0::2]
         Y = x[..., 1::2]
