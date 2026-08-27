@@ -1,11 +1,12 @@
 import torch
 import torch.nn as nn
-from jaxtyping import Float, Int
+from jaxtyping import Float
 from torch import Tensor
-from einops import rearrange, einsum
 
-from cs336_basics.utils.scaled_dot_product_attention import scaled_dot_product_attention
+from cs336_basics.layers.rmsnorm import RMSNorm
 from cs336_basics.layers.rope import RoPE
+from cs336_basics.layers.multihead_self_attention import MultiHeadSelfAttention
+from cs336_basics.layers.swiglu import SwiGLU
 
 
 class TransformerBlock(nn.Module):
@@ -14,16 +15,20 @@ class TransformerBlock(nn.Module):
         d_model: int,
         num_heads: int,
         d_ff: int,
-        rope: RoPE | None
+        rope: RoPE | None = None,
     ):
         super().__init__()
         self.d_model = d_model
         self.num_heads = num_heads
         self.d_ff = d_ff
-        self.rope = rope
+
+        self.attn = MultiHeadSelfAttention(d_model, num_heads, rope)
+        self.ln1 = RMSNorm(d_model)
+        self.ffn = SwiGLU(d_model, d_ff)
+        self.ln2 = RMSNorm(d_model)
 
     def forward(
         self,
-        in_features: Float[Tensor, " batch sequence_length d_model"],
+        x: Float[Tensor, " ... sequence_length d_model"],
     ) -> torch.Tensor:
         pass

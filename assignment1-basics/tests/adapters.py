@@ -17,8 +17,10 @@ from cs336_basics.layers.rmsnorm import RMSNorm
 from cs336_basics.layers.swiglu import SwiGLU
 from cs336_basics.layers.rope import RoPE
 from cs336_basics.layers.multihead_self_attention import MultiHeadSelfAttention
+from cs336_basics.layers.transformer_block import TransformerBlock
 
 from cs336_basics.utils.softmax import softmax
+from cs336_basics.utils.silu import silu
 from cs336_basics.utils.scaled_dot_product_attention import scaled_dot_product_attention
 
 
@@ -41,7 +43,7 @@ def run_linear(
         Float[Tensor, "... d_out"]: The transformed output of your linear module.
     """
     model = Linear(d_in, d_out)
-    model.load_state_dict({"W": weights})
+    model.load_state_dict({"weight": weights})
     return model.forward(in_features)
 
 
@@ -64,7 +66,7 @@ def run_embedding(
         Float[Tensor, "... d_model"]: Batch of embeddings returned by your Embedding layer.
     """
     model = Embedding(vocab_size, d_model)
-    model.load_state_dict({"W": weights})
+    model.load_state_dict({"weight": weights})
     return model.forward(token_ids)
 
 
@@ -98,7 +100,7 @@ def run_swiglu(
     # swiglu.w2.weight.data = w2_weight
     # swiglu.w3.weight.data = w3_weight
     model = SwiGLU(d_model, d_ff)
-    model.load_state_dict({"W1": w1_weight, "W2": w2_weight, "W3": w3_weight})
+    model.load_state_dict({"w1.weight": w1_weight, "w2.weight": w2_weight, "w3.weight": w3_weight})
     return model.forward(in_features)
 
 
@@ -154,16 +156,16 @@ def run_multihead_self_attention(
         Float[Tensor, " ... sequence_length d_model"]: Tensor with the output of running your optimized, batched multi-headed attention
         implementation with the given QKV projection weights and input features.
     """
-    model = MultiHeadSelfAttention(
-        d_model,
-        num_heads,
-        None,
-        q_proj_weight,
-        k_proj_weight,
-        v_proj_weight,
-        o_proj_weight
+    model = MultiHeadSelfAttention(d_model, num_heads)
+    model.load_state_dict(
+        {
+            "q_proj.weight": q_proj_weight,
+            "k_proj.weight": k_proj_weight,
+            "v_proj.weight": v_proj_weight,
+            "output_proj.weight": o_proj_weight,
+        }
     )
-    return model.forward(in_features)
+    return model(in_features)
 
 
 def run_multihead_self_attention_with_rope(
@@ -209,16 +211,16 @@ def run_multihead_self_attention_with_rope(
     rope = RoPE(
         theta, d_k, max_seq_len
     )
-    model = MultiHeadSelfAttention(
-        d_model,
-        num_heads,
-        rope,
-        q_proj_weight,
-        k_proj_weight,
-        v_proj_weight,
-        o_proj_weight
+    model = MultiHeadSelfAttention(d_model, num_heads, rope)
+    model.load_state_dict(
+        {
+            "q_proj.weight": q_proj_weight,
+            "k_proj.weight": k_proj_weight,
+            "v_proj.weight": v_proj_weight,
+            "output_proj.weight": o_proj_weight,
+        }
     )
-    return model.forward(in_features, token_positions)
+    return model(in_features, token_positions)
 
 
 def run_rope(
@@ -314,7 +316,10 @@ def run_transformer_block(
         Float[Tensor, "batch sequence_length d_model"] Tensor with the output of
         running the Transformer block on the input features while using RoPE.
     """
-    raise NotImplementedError
+    rope = RoPE(theta, d_model // num_heads, max_seq_len)
+    model = TransformerBlock(d_model, num_heads, d_ff, rope)
+    model.load_state_dict(weights)
+    return model(in_features)
 
 
 def run_transformer_lm(
@@ -420,7 +425,7 @@ def run_rmsnorm(
         RMSNorm of the `in_features`.
     """
     model = RMSNorm(d_model, eps)
-    model.load_state_dict({"g": weights})
+    model.load_state_dict({"weight": weights})
     return model.forward(in_features)
 
 
@@ -435,7 +440,7 @@ def run_silu(in_features: Float[Tensor, " ..."]) -> Float[Tensor, " ..."]:
         Float[Tensor,"..."]: of with the same shape as `in_features` with the output of applying
         SiLU to each element.
     """
-    raise NotImplementedError
+    return silu(in_features)
 
 
 def run_get_batch(

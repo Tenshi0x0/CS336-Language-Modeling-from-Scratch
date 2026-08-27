@@ -16,7 +16,7 @@ class RMSNorm(nn.Module):
         self.eps = eps
         self.device = device
         self.dtype = dtype
-        self.g = nn.Parameter(
+        self.weight = nn.Parameter(
             torch.ones(
                 d_model,
                 device=device,
@@ -28,5 +28,5 @@ class RMSNorm(nn.Module):
         in_dtype = x.dtype
         x = x.to(torch.float32)
         rms = ((x**2).mean(dim=-1, keepdim=True) + self.eps).sqrt()
-        res = (x / rms) * self.g
+        res = (x / rms) * self.weight
         return res.to(in_dtype)
