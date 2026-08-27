@@ -13,8 +13,7 @@ class MultiHeadSelfAttention(nn.Module):
         self,
         d_model: int,
         num_heads: int,
-        max_seq_len: int | None,
-        theta: float | None,
+        rope: RoPE | None,
         q_proj_weight: Float[Tensor, " d_model d_model"],
         k_proj_weight: Float[Tensor, " d_model d_model"],
         v_proj_weight: Float[Tensor, " d_model d_model"],
@@ -25,23 +24,24 @@ class MultiHeadSelfAttention(nn.Module):
         self.d_model = d_model
         self.num_heads = num_heads
         self.d_k = d_model // num_heads
-        self.max_seq_len = max_seq_len
-        self.theta = theta
+        # self.max_seq_len = max_seq_len
+        # self.theta = theta
         self.W_Q = nn.Parameter(q_proj_weight)
         self.W_K = nn.Parameter(k_proj_weight)
         self.W_V = nn.Parameter(v_proj_weight)
         self.W_O = nn.Parameter(o_proj_weight)
 
-        d_k = d_model // num_heads
+        self.rope = rope
+        # d_k = d_model // num_heads
         # self.rope = None if theta is None else RoPE(
         #     theta, d_k, max_seq_len
         # )
-        self.rope = None
-        if theta is not None:
-            assert max_seq_len is not None
-            self.rope =  RoPE(
-                theta, d_k, max_seq_len
-            )
+        # self.rope = None
+        # if theta is not None:
+        #     assert max_seq_len is not None
+        #     self.rope =  RoPE(
+        #         theta, d_k, max_seq_len
+        #     )
 
     def forward(
         self,
