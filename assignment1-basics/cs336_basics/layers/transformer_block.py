@@ -31,4 +31,6 @@ class TransformerBlock(nn.Module):
         self,
         x: Float[Tensor, " ... sequence_length d_model"],
     ) -> torch.Tensor:
-        pass
+        x_first = x + self.attn(self.ln1(x))
+        x_second = x_first + self.ffn(self.ln2(x_first))
+        return x_second
