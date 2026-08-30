@@ -19,7 +19,7 @@ from cs336_basics.layers.rope import RoPE
 from cs336_basics.layers.multihead_self_attention import MultiHeadSelfAttention
 from cs336_basics.layers.transformer_block import TransformerBlock
 from cs336_basics.layers.transformer_lm import TransformerLM
-from cs336_basics.optim import AdamW
+from cs336_basics.optim import AdamW, get_lr_cosine_schedule
 
 from cs336_basics.utils.softmax import softmax
 from cs336_basics.utils.silu import silu
@@ -557,7 +557,9 @@ def run_get_lr_cosine_schedule(
     Returns:
         Learning rate at the given iteration under the specified schedule.
     """
-    raise NotImplementedError
+    return get_lr_cosine_schedule(
+        it, max_learning_rate, min_learning_rate, warmup_iters, cosine_cycle_iters
+    )
 
 
 def run_save_checkpoint(
