@@ -1,4 +1,4 @@
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 
 import torch
 import math
@@ -69,3 +69,18 @@ def get_lr_cosine_schedule(
     else:
         lr = min_learning_rate
     return lr
+
+
+def gradient_clipping(parameters: Iterable[torch.nn.Parameter], max_l2_norm: float) -> None:
+    grads = []
+    for p in parameters:
+        if p.grad is not None:
+            grads.append(p.grad)
+    if not grads:
+        return
+
+    norm = torch.sqrt(sum((g**2).sum() for g in grads))
+
+    if norm > max_l2_norm:
+        for g in grads:
+            g *= max_l2_norm / (norm + 1e-6)
