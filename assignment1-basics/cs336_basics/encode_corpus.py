@@ -4,7 +4,7 @@ The corpus is split at `<|endoftext|>` boundaries so no document (and hence no
 token) is ever cut in half, then the pieces are encoded in parallel and
 concatenated back in order.
 
-    uv run python scripts/encode_corpus.py \
+    uv run python -m cs336_basics.encode_corpus \
         --input data/raw/TinyStoriesV2-GPT4-valid.txt \
         --vocab data/tokenizer/tinystories_vocab.pkl \
         --merges data/tokenizer/tinystories_merges.pkl \

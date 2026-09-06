@@ -1,9 +1,9 @@
 #!/bin/bash
 # Train the TinyStories LM on one H200.
 # Submit FROM THE REPOSITORY ROOT:
-#     sbatch scripts/slurm/train.sbatch
-# Extra arguments are forwarded to scripts/train.py, e.g.
-#     sbatch scripts/slurm/train.sbatch --lr 1e-3 --run-name ts-lr1e-3
+#     sbatch slurm/train.sbatch
+# Extra arguments are forwarded to cs336_basics/train.py, e.g.
+#     sbatch slurm/train.sbatch --lr 1e-3 --run-name ts-lr1e-3
 #SBATCH --job-name=a1-train-ts
 #SBATCH --partition=gpu
 #SBATCH --nodes=1
@@ -20,6 +20,6 @@ cd "${SLURM_SUBMIT_DIR:-$(pwd)}"
 echo "node=$(hostname)  gpu=${CUDA_VISIBLE_DEVICES:-?}  start=$(date -Is)"
 nvidia-smi --query-gpu=name,memory.total --format=csv,noheader || true
 
-uv run python scripts/train.py --device cuda "$@"
+uv run python -m cs336_basics.train --device cuda "$@"
 
 echo "end=$(date -Is)"

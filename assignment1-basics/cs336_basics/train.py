@@ -3,7 +3,7 @@
 All paths are relative to the repository root, which is where this script is
 meant to be launched from:
 
-    uv run python scripts/train.py --run-name ts-baseline
+    uv run python -m cs336_basics.train --run-name ts-baseline
 
 Defaults follow the hyperparameters prescribed in handout section 7.2.
 """
