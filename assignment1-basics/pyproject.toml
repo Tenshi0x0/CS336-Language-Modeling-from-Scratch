@@ -33,6 +33,17 @@ module-root = ""
 package = true
 python-preference = "managed"
 
+# The Explorer GPU nodes ship an NVIDIA driver that reports CUDA 12.8; the
+# default torch wheel is built against CUDA 13.0 and aborts at cuda_init with
+# "the NVIDIA driver on your system is too old". Pin torch to the cu128 wheels.
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu128" }
+
 [tool.pytest.ini_options]
 log_cli = true
 log_cli_level = "WARNING"
